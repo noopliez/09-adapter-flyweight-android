@@ -5,6 +5,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import ohm.softa.a09.R;
@@ -21,9 +26,19 @@ import ohm.softa.a09.model.rebellion.YWing;
 
 public class FighterFactory {
 
+    private class FighterFlyweight {
+        private final Drawable image;
+
+        FighterFlyweight(int imageId) throws URISyntaxException, IOException {
+            image = new BitmapDrawable(context.getResources(), BitmapFactory.decodeResource(context.getResources(), imageId));
+        }
+    }
+
     private final Random random;
     private final Context context;
     private final NameGenerator nameGenerator;
+
+    private final Map<Integer, FighterFlyweight> flyweights = new HashMap<>();
 
     public FighterFactory(Context context) {
         this.context = context;
@@ -31,7 +46,7 @@ public class FighterFactory {
         random = new Random();
     }
 
-    public Fighter createFighter() {
+    public Fighter createFighter() throws IOException, URISyntaxException {
         switch (random.nextInt(6)) {
             case 0:
                 return new AWing(nameGenerator.generateName(), loadImage(R.drawable.awing));
@@ -48,7 +63,14 @@ public class FighterFactory {
         }
     }
 
-    private Drawable loadImage(int imageId) {
-        return new BitmapDrawable(context.getResources(), BitmapFactory.decodeResource(context.getResources(), imageId));
+    private Drawable loadImage(int imageId) throws IOException, URISyntaxException {
+        if (flyweights.containsKey(imageId)) {
+            return Objects.requireNonNull(flyweights.get(imageId)).image;
+        }
+
+        FighterFlyweight fw = new FighterFlyweight(imageId);
+        flyweights.put(imageId, fw);
+
+        return fw.image;
     }
 }
